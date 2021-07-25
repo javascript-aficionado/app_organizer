@@ -42,5 +42,36 @@ function load_groups(save_file){
     return {_names: _names, _apps: res};
 }
 
+//pretty much the same but for websites. There wouldn't even be need for these if it weren't for those pesky, pesky names 
+function save_websites(save_file, group_list){
+    let res = "";
+
+    group_list.forEach(file_list => {
+        file_list.forEach(file=>{
+            res += file + ',';
+        });
+
+        res += '\n';
+    });
+
+    fs.writeFileSync(save_file, res, err=>{if(err) throw err;});
+}
+
+function load_websites(save_file){
+    let _raw_data = fs.readFileSync(save_file, {encoding: 'utf8'});
+    let _groups = _raw_data.split('\n');
+    _groups.pop();
+
+    let res = [];
+    _groups.forEach(str=>{
+        res.push(str.split(','));
+        res[res.length - 1].pop();
+    });
+
+    return res;
+}
+
 exports.save_groups = save_groups;
 exports.load_groups = load_groups;
+exports.save_websites = save_websites;
+exports.load_websites = load_websites;

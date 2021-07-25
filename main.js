@@ -1,8 +1,8 @@
 const electron = require('electron');
 const url = require('url');
 const path = require('path');
-const {mainMenuTemplate} = require('./menu.js');
-const io = require('./input-output.js');
+const {mainMenuTemplate} = require(path.join(__dirname, 'menu.js'));
+const io = require(path.join(__dirname, 'input-output.js'));
 const fs = require('fs');
 
 const {app, BrowserWindow, Menu, ipcMain, ipcRenderer, dialog, nativeImage} = electron;
@@ -24,8 +24,8 @@ class group{
 }
 
 //save files
-const app_file = './save.txt';
-const website_file = './save.txt';
+const app_file = path.resolve((process.env.NODE_ENV === 'production') ? __dirname : __dirname.substring(0, __dirname.length - 9), 'save_apps.txt');
+const website_file = path.resolve((process.env.NODE_ENV === 'production') ? __dirname : __dirname.substring(0, __dirname.length - 9), 'save_websites.txt');
 
 //arrays to store app and website names. They will be passed on to the home screen
 let apps;
@@ -36,7 +36,7 @@ let names;
 //windows of the applications (doesn't take a genius to figure this out)
 let homeScreen;
 let editWindow;
-let addWindow;
+let addWebsiteWindow;
 
 //initialize home screen
 app.on('ready', function(){
@@ -54,7 +54,8 @@ app.on('ready', function(){
     }));
 
     homeScreen.on('close', ()=>{
-        io.save_groups('./save.txt', names, apps);
+        io.save_groups(app_file, names, apps);
+        io.save_websites(website_file, websites);
         app.quit();
     })
 
@@ -62,9 +63,12 @@ app.on('ready', function(){
     Menu.setApplicationMenu(mainMenu);
 
     //get directories to open from save file and pass them to the home screen
-    let _temp = io.load_groups('./save.txt');
+    let _temp = (fs.existsSync(app_file) ? io.load_groups(app_file) : {_names: [], _apps: []});
     names = _temp._names;
     apps = _temp._apps;
+
+    websites = (fs.existsSync(app_file) ? io.load_websites(website_file) : []);
+    console.log(websites);
 
     //find the images of the apps
     imgs = [];
@@ -80,7 +84,7 @@ app.on('ready', function(){
     }
 
     homeScreen.webContents.on('did-finish-load', ()=>{
-        homeScreen.webContents.send('init:groups', {_names: names, _apps: apps, _imgs: imgs});
+        homeScreen.webContents.send('init:groups', {_names: names, _apps: apps, _imgs: imgs, _websites: websites});
     });
 });
 
@@ -98,7 +102,8 @@ ipcMain.on('del:group', (event, index)=>{
             apps.splice(index, 1);
             imgs.splice(index, 1);
             names.splice(index, 1); 
-            homeScreen.webContents.send('init:groups', {_names: names, _apps: apps, _imgs: imgs});
+            websites.splice(index, 1);
+            homeScreen.webContents.send('init:groups', {_names: names, _apps: apps, _imgs: imgs, _websites: websites});
         }
     });
 });
@@ -126,7 +131,8 @@ ipcMain.on('add:group', (event, data)=>{
         apps.push([]);
         imgs.push([]);
         names.push('New Group');
-        editWindow.webContents.send('init:apps', {_id: apps.length - 1, _name: 'New Group', _apps: [], _imgs: []});
+        websites.push([]);
+        editWindow.webContents.send('init:apps', {_id: apps.length - 1, _name: 'New Group', _apps: [], _imgs: [], _websites: []});
     });
 });
 
@@ -150,7 +156,7 @@ ipcMain.on('edit_group', (event, index)=>{
     });
 
     editWindow.webContents.on('did-finish-load', ()=>{
-        editWindow.webContents.send('init:apps', {_id: index, _name: names[index], _apps: apps[index], _imgs: imgs[index]});
+        editWindow.webContents.send('init:apps', {_id: index, _name: names[index], _apps: apps[index], _imgs: imgs[index], _websites: websites[index]});
     });
 });
 
@@ -160,17 +166,19 @@ ipcMain.on('close:editWindow', (event, data)=>{
         apps[data._id] = data._apps;
         imgs[data._id] = data._imgs;
         names[data._id] = data._name;
+        websites[data._id] = data._websites;
     }else{
         //if the group has been emptied, make sure to delete it form the list
         apps.splice(data._id, 1);
         imgs.splice(data._id, 1);
         names.splice(data._id, 1);
+        websites.splice(data._id, 1);
     }
 
     editWindow.close();
 
     //notify the home screen to also change its content accordingly
-    homeScreen.webContents.send('init:groups', {_names: names, _apps: apps, _imgs: imgs});
+    homeScreen.webContents.send('init:groups', {_names: names, _apps: apps, _imgs: imgs, _websites: websites});
 });
 
 ipcMain.on('add:app', (event, data)=>{
@@ -211,13 +219,39 @@ ipcMain.on('add:app', (event, data)=>{
     }
 });
 
+ipcMain.on('add:website', (event, data)=>{
+    addWebsiteWindow = new BrowserWindow({
+        webPreferences: {
+            nodeIntegration: true,
+            contextIsolation: false,
+        }
+    })
+
+    addWebsiteWindow.loadURL(url.format({
+        pathname: path.join(__dirname, "addWebsiteWindow.html"),
+        protocol: 'file:',
+        slashes: true
+    }));
+
+    addWebsiteWindow.on('close', ()=>{
+        addWebsiteWindow = null;
+    });
+});
+
+ipcMain.on('get:website', (event, url)=>{
+    if(url != ''){
+        editWindow.webContents.send('receive:new_website', url);
+        addWebsiteWindow.close();
+    }
+});
+
 //small fix for menu on mac
 if(process.platform == 'darwin'){
     mainMenuTemplate.unshift({});
 }
 
 //Push developer tools on app menu when in production
-if(process.env.NODE_ENV !== 'production'){
+if(process.env.NODE_ENV.trim() === 'production'){
     mainMenuTemplate.push({
         label:'Developer Tools',
         submenu:[

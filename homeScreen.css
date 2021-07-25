@@ -14,3 +14,7 @@ img{
     height: 30px;
     width: 30px;
 }
+
+input{
+    font-family: sans-serif;
+}

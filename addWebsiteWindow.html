@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel = 'stylesheet' href = './homeScreen.css'>
+    <meta charset="UTF-8">
+    <title>Add Website</title>
+</head>
+
+<body>
+    <h1>Enter website url</h1>
+
+    <form id = "constant_form">
+        <input id = "text_field" type = "text"></input>
+        <input id = "done_btn" type="submit" value="Done"></input>
+        <input id = "cancel_btn" type="submit" value="Cancel"></input>
+    </form>
+    <script>
+        const {ipcRenderer} = require('electron');
+
+        document.getElementById('done_btn').onclick = ()=>{
+            ipcRenderer.send('get:website', document.getElementById('text_field').value);
+        };
+
+        document.getElementById('cancel_btn').onclick = ()=>{
+            ipcRenderer.send('get:website', '');
+        };
+    </script>
+</body>
+</html>

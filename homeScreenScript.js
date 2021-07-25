@@ -3,11 +3,13 @@ const {app, nativeImage, ipcRenderer, dialog} = electron;
 const fr = document.getElementById("the_form");
 const fs = require('fs');
 const { brotliDecompressSync } = require('zlib');
-const io = require('./input-output.js');
+const cp = require('child_process');
+const open = require('open');
 
 let apps;
 let imgs;
 let names;
+let websites;
 
 document.getElementById('add_btn').onclick = add;
 
@@ -16,6 +18,8 @@ ipcRenderer.on('init:groups', (event, temp)=>{
     apps = temp._apps;
     imgs = temp._imgs;
     names = temp._names;
+    websites = temp._websites;
+    console.log(websites);
 
     render_list();
 });
@@ -29,6 +33,7 @@ function render_list(){
         let edit_button = document.createElement('input');
         let del_button = document.createElement('input');
         let text_name = document.createElement('h3');
+        let run_button = document.createElement('input');
 
         text_name.innerHTML = names[i];
         div.appendChild(text_name);
@@ -46,6 +51,20 @@ function render_list(){
             ipcRenderer.send('edit_group', i);
         };
         div.appendChild(edit_button);
+
+        run_button.setAttribute('type', 'button');
+        run_button.setAttribute('float', 'right');
+        run_button.setAttribute('value', 'Run')
+        run_button.onclick = ()=>{
+            apps[i].forEach(app=>{
+                cp.exec(`start ${app}`);
+            });
+
+            websites[i].forEach(website=>{
+                open(website);
+            });
+        };
+        div.appendChild(run_button);
 
         del_button.setAttribute('type', 'button');
         del_button.setAttribute('float', 'right');
