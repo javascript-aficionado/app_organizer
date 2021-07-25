@@ -1,0 +1,4 @@
+the first electronic computers, Group 2, Group 3,
+./test.py,./main.js,C:\Users\spyro\AppData\Local\Programs\Messenger\Messenger.exe,C:\Users\spyro\OneDrive\Υπολογιστής\BMO_2019_Shortlist_reduced_size.pdf,
+./homeScreen.html,
+C:\Users\spyro\OneDrive\Υπολογιστής\black_body_meme.png,
