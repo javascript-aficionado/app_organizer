@@ -24,14 +24,19 @@ class group{
 }
 
 //save files
-const app_file = path.resolve((process.env.NODE_ENV === 'production') ? __dirname : __dirname.substring(0, __dirname.length - 9), 'save_apps.txt');
-const website_file = path.resolve((process.env.NODE_ENV === 'production') ? __dirname : __dirname.substring(0, __dirname.length - 9), 'save_websites.txt');
+const app_file = path.resolve((process.env.NODE_ENV === 'development') ? __dirname : __dirname.substring(0, __dirname.length - 9), 'save_apps.txt');
+const website_file = path.resolve((process.env.NODE_ENV === 'development') ? __dirname : __dirname.substring(0, __dirname.length - 9), 'save_websites.txt');
+
+//const app_file = path.resolve(__dirname, 'save_apps.txt');
+//const website_file = path.resolve(__dirname, 'save_websites.txt');
+
 
 //arrays to store app and website names. They will be passed on to the home screen
 let apps;
 let websites;
 let imgs = [];
 let names;
+let order = [];
 
 //windows of the applications (doesn't take a genius to figure this out)
 let homeScreen;
@@ -40,6 +45,7 @@ let addWebsiteWindow;
 
 //initialize home screen
 app.on('ready', function(){
+    console.log(process.env.NODE_ENV);
     homeScreen = new BrowserWindow({
         webPreferences: {
             nodeIntegration: true,
@@ -54,10 +60,36 @@ app.on('ready', function(){
     }));
 
     homeScreen.on('close', ()=>{
+        let new_apps = [];
+        let new_websites = [];
+        let new_imgs = [];
+        let new_names = [];
+
+        order.forEach(index=>{
+            new_apps.push(apps[index]);   
+            new_websites.push(websites[index]);
+            new_imgs.push(imgs[index]);
+            new_names.push(names[index]); 
+        });
+
+        console.log(names);
+
+        apps = new_apps;
+        websites =  new_websites;
+        imgs = new_imgs;
+        names = new_names;
+
+        console.log(names);
+
+        //sometimes my genius, it's just frightening
+        for(let i = 0; i < order.length; i++){
+            order[i] = i;
+        }
+
         io.save_groups(app_file, names, apps);
         io.save_websites(website_file, websites);
         app.quit();
-    })
+    });
 
     const mainMenu = Menu.buildFromTemplate(mainMenuTemplate);
     Menu.setApplicationMenu(mainMenu);
@@ -68,7 +100,6 @@ app.on('ready', function(){
     apps = _temp._apps;
 
     websites = (fs.existsSync(app_file) ? io.load_websites(website_file) : []);
-    console.log(websites);
 
     //find the images of the apps
     imgs = [];
@@ -81,6 +112,11 @@ app.on('ready', function(){
                 }
             );
         }
+    }
+
+    //set the default order to be the identity permutation
+    for(let i = 0; i < apps.length; i++){
+        order.push(i);
     }
 
     homeScreen.webContents.on('did-finish-load', ()=>{
@@ -245,13 +281,19 @@ ipcMain.on('get:website', (event, url)=>{
     }
 });
 
+ipcMain.on('order_changed', (event, _order)=>{
+    console.log('event received');
+    order = _order;
+    console.log(order);
+});
+
 //small fix for menu on mac
 if(process.platform == 'darwin'){
     mainMenuTemplate.unshift({});
 }
 
 //Push developer tools on app menu when in production
-if(process.env.NODE_ENV.trim() === 'production'){
+if(process.env.NODE_ENV.trim() === 'development'){
     mainMenuTemplate.push({
         label:'Developer Tools',
         submenu:[

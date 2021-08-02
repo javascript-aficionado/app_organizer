@@ -1,3 +1,9 @@
+:root{
+    --black: #191414;
+    --dark-green: #1db954;
+    --green: #1ed760;
+}
+
 h1{
     font-family: sans-serif;
 }
@@ -17,4 +23,78 @@ img{
 
 input{
     font-family: sans-serif;
+}
+
+body{
+    background-color: var(--black);
+    color: white;
+}
+
+input{
+    background-color: var(--green); /* Green */
+    border: none;
+    border-radius: 5px;
+    color: white;
+    cursor: pointer;
+}
+
+.group{
+    background-color: var(--green);
+    border-radius: 5px;
+    margin: 5px;
+    display: flex;
+    align-items: center;
+}
+
+.group > input{
+    z-index: 5;
+}
+
+.group > .grp_btn{
+    background-color: var(--green);
+    width: 30px;
+    height: 30px;
+}
+
+.group > .grp_edit{
+    margin-left: auto;
+    margin-right: 10px;
+}
+
+.group > .grp_run{
+    margin-right: 10px;
+}
+
+.group > .grp_edit:hover{
+    transform: rotate(45deg);
+}
+
+.group > .grp_del{
+    margin-right: 10px;
+}
+
+.group > .grp_btn:hover{
+    transform: scale(1.2);
+    cursor: pointer;
+}
+
+#add_btn{
+    border-radius: 50%;
+    margin-left: auto;
+    margin-right: 20px;
+}
+
+#add_div{
+    display: flex;
+}
+
+.group.dragging{
+    position: absolute;
+    float: center;
+    transform: scale(1.2);   
+}
+
+.decoy{
+    display: flex;
+    background-color: blue;
 }
