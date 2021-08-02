@@ -15,15 +15,12 @@ let websites;
 document.getElementById('add_btn').onclick = add;
 
 //variables required for drag and drop control
-let draggables;
-let div_containers;
-let original_container;
+let draggables = [];
+let div_containers = [];
 let dragging;
 let current_content;
 let is_dragging;
-let x_pos;
 let target_container;
-let prev_container;
 let order_array = [];
 let target_index;
 
@@ -38,15 +35,22 @@ ipcRenderer.on('init:groups', (event, temp)=>{
     names = temp._names;
     websites = temp._websites;
 
-    for(let i = 0; i < apps.length; i++){
-        order_array.push(i);
+    div_containers = [];
+    draggables = [];
+    if(order_array.length == 0){
+        for(let i = 0; i < apps.length; i++){
+            order_array.push(i);
+        }
     }
 
     render_list();
 
     //drag-related procedures
     draggables = document.querySelectorAll('.group');
-    div_containers = document.querySelectorAll('.container');
+    const _div_containers = document.querySelectorAll('.container');
+    _div_containers.forEach(container=>{
+        div_containers.push(container);
+    });
 
     document.addEventListener('mousemove', e=>{  
         e.preventDefault();  
@@ -74,6 +78,8 @@ ipcRenderer.on('init:groups', (event, temp)=>{
             if(!is_dragging){
                 e.preventDefault();
                 dragging = draggable;
+                target_index = div_containers.indexOf(draggable.parentElement);
+
                 target_container = draggable.parentElement;
                 target_container.removeChild(draggable);
                 draggable.classList.add('dragging');
@@ -82,8 +88,6 @@ ipcRenderer.on('init:groups', (event, temp)=>{
                 is_dragging = true;
 
                 target_container.appendChild(decoy);
-                
-                target_index = i;
             }
         });
     }
@@ -101,8 +105,6 @@ ipcRenderer.on('init:groups', (event, temp)=>{
 
                 [order_array[i], order_array[target_index]] = [order_array[target_index], order_array[i]];
                 target_index = i;
-
-                console.log(order_array);
             }
         });
     }
@@ -165,8 +167,6 @@ function render_list(){
         //del_button.setAttribute('class', 'grp_btn grp_del');
         del_button.setAttribute('class', 'grp_btn grp_del');
         del_button.onclick = ()=>{
-            order_array.splice(order_array.indexOf(i), 1);
-
             ipcRenderer.send('del:group', i);
         };
         div.appendChild(del_button);
@@ -175,6 +175,16 @@ function render_list(){
     }
 }
 
+ipcRenderer.on('confirm:del', (event, index)=>{
+    order_array.splice(order_array.indexOf(index), 1);
+    for(let j = 0; j < order_array.length; j++){
+        if(order_array[j] > index) order_array[j]--;
+    }
+    ipcRenderer.send('order_changed', order_array);
+});
+
 function add(){
+    order_array.push(order_array.length);
     ipcRenderer.send('add:group', {});
+    ipcRenderer.send('order_changed', order_array);
 }

@@ -72,14 +72,10 @@ app.on('ready', function(){
             new_names.push(names[index]); 
         });
 
-        console.log(names);
-
         apps = new_apps;
         websites =  new_websites;
         imgs = new_imgs;
         names = new_names;
-
-        console.log(names);
 
         //sometimes my genius, it's just frightening
         for(let i = 0; i < order.length; i++){
@@ -135,6 +131,7 @@ ipcMain.on('del:group', (event, index)=>{
     }).then(res=>{
         //we only want to delete a group if the user clicked ok
         if(res.response == 0){
+            homeScreen.webContents.send('confirm:del', index);
             apps.splice(index, 1);
             imgs.splice(index, 1);
             names.splice(index, 1); 
@@ -209,6 +206,7 @@ ipcMain.on('close:editWindow', (event, data)=>{
         imgs.splice(data._id, 1);
         names.splice(data._id, 1);
         websites.splice(data._id, 1);
+        homeScreen.webContents.send('confirm:del', data._id);
     }
 
     editWindow.close();
@@ -282,9 +280,7 @@ ipcMain.on('get:website', (event, url)=>{
 });
 
 ipcMain.on('order_changed', (event, _order)=>{
-    console.log('event received');
     order = _order;
-    console.log(order);
 });
 
 //small fix for menu on mac
